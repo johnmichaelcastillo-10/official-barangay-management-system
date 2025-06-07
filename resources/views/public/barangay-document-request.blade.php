@@ -94,19 +94,6 @@
             padding: 12px 30px;
             font-weight: 500;
         }
-
-        .preview-box {
-            border: 2px dashed #dee2e6;
-            border-radius: 10px;
-            background: #f8f9fa;
-            transition: all 0.3s ease;
-        }
-
-        .preview-box:hover {
-            border-color: #667eea;
-            background: #f0f2ff;
-        }
-
         .back-link {
             color: white;
             text-decoration: none;
@@ -124,54 +111,6 @@
             border: none;
         }
 
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            margin: 2rem 0;
-            padding: 0 1rem;
-        }
-
-        .step {
-            flex: 1;
-            text-align: center;
-            position: relative;
-        }
-
-        .step::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            right: -50%;
-            width: 100%;
-            height: 2px;
-            background: #dee2e6;
-            z-index: 1;
-        }
-
-        .step:last-child::after {
-            display: none;
-        }
-
-        .step-number {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #667eea;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 0.5rem;
-            font-weight: 600;
-            position: relative;
-            z-index: 2;
-        }
-
-        .step-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
@@ -179,19 +118,21 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 <div class="registration-card">
+                    <!-- Card Header -->
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <a href="{{ route('welcome') }}" class="back-link">
                                 <i class="fas fa-arrow-left me-2"></i>Back to Home
                             </a>
                             <div class="text-center">
-                                <i class="fas fa-building fa-2x mb-2"></i>
+                                <i class="fas fa-file fa-2x mb-2"></i>
                             </div>
                             <div style="width: 100px;"></div> <!-- Spacer -->
                         </div>
                         <h1 class="header-title">Document Request Form</h1>
                         <p class="header-subtitle">Request a copy of your document</p>
                     </div>
+
                     <!-- Error Display -->
                     @if ($errors->any())
                         <div class="mx-4 mt-3">
@@ -206,26 +147,36 @@
                         </div>
                     @endif
 
+                    <!-- Form Section -->
                     <div class="form-section">
-                        <form action="{{ route('public.residents.store') }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('document.request.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
-                            <div class="row mb-4 d-flex align-items-center justify-content-center">
-                                <div class="col-md-6 mb-3">
-                                    <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" placeholder="your.email@example.com">
+
+                            <div class="row mb-4">
+                                <!-- Email -->
+                                <div class="col-md-12 mb-3">
+                                    <label for="email" class="form-label">Email Address <span class="required">*</span></label>
+                                    <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                            id="email" name="email" value="{{ old('email') }}" required placeholder="your.email@example.com">
                                     @error('email')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3 mb-3">
+                                <div class="col-md-6 mb-3">
                                     <label for="birth_date" class="form-label">Birth Date <span class="required">*</span></label>
-                                    <input type="date" class="form-control @error('birth_date') is-invalid @enderror" id="birth_date" name="birth_date" value="{{ old('birth_date') }}" required>
+                                    <input type="date" class="form-control @error('birth_date') is-invalid @enderror"
+                                            id="birth_date" name="birth_date" value="{{ old('birth_date') }}" required>
                                     @error('birth_date')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div>
-                                    
+                                <div class="col-md-6 mb-3">
+                                    <label for="document_type" class="form-label">Document Type <span class="required">*</span></label>
+                                    <input type="text" class="form-control @error('document_type') is-invalid @enderror"
+                                            id="document_type" name="document_type" value="{{ old('document_type') }}" required placeholder="Enter document type">
+                                    @error('document_type')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
 
@@ -242,64 +193,27 @@
                             </div>
                         </form>
                     </div>
+                    <!-- End Form Section -->
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Form JS -->
     <script>
-        // Photo preview functionality
-        document.getElementById('photo').addEventListener('change', function(e) {
-            const previewText = document.getElementById('preview-text');
-            const previewImg = document.getElementById('photo-preview');
-
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                    previewText.style.display = 'none';
-                }
-
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                previewImg.style.display = 'none';
-                previewText.style.display = 'block';
-            }
-        });
-
-        // Valid ID preview functionality
-        document.getElementById('valid_id').addEventListener('change', function(e) {
-            const previewText = document.getElementById('id-preview-text');
-            const previewImg = document.getElementById('id-preview');
-
-            if (this.files && this.files[0]) {
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    previewImg.src = e.target.result;
-                    previewImg.style.display = 'block';
-                    previewText.style.display = 'none';
-                }
-
-                reader.readAsDataURL(this.files[0]);
-            } else {
-                previewImg.style.display = 'none';
-                previewText.style.display = 'block';
-            }
-        });
-
         // Form validation
-        document.querySelector('form').addEventListener('submit', function(e) {
-            const requiredFields = ['first_name', 'last_name', 'birth_date', 'gender', 'civil_status', 'contact_number', 'address', 'valid_id'];
+        document.querySelector('form')?.addEventListener('submit', function (e) {
+            const requiredFields = ['email', 'birth_date', 'document_type'];
             let hasErrors = false;
 
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);
+                if (!input) return;
+
                 if (field === 'valid_id') {
-                    // Check if file is selected
                     if (!input.files || input.files.length === 0) {
                         input.classList.add('is-invalid');
                         hasErrors = true;
@@ -314,31 +228,26 @@
                 }
             });
 
-            const termsCheckbox = document.getElementById('terms');
-            if (!termsCheckbox.checked) {
-                alert('Please agree to the Terms and Conditions to proceed.');
-                hasErrors = true;
-            }
-
             if (hasErrors) {
                 e.preventDefault();
                 alert('Please fill in all required fields and upload a valid ID.');
             }
         });
 
-        // Contact number formatting
-        document.getElementById('contact_number').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 11) value = value.slice(0, 11);
-            e.target.value = value;
-        });
+        // Phone input formatting
+        const formatPhone = (id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+                e.target.value = value;
+            });
+        };
 
-        // Emergency contact number formatting
-        document.getElementById('emergency_contact_number').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 11) value = value.slice(0, 11);
-            e.target.value = value;
-        });
+        formatPhone('contact_number');
+        formatPhone('emergency_contact_number');
     </script>
 </body>
+
 </html>

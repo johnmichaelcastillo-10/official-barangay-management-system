@@ -172,8 +172,15 @@
                             </li>
 
                             <li class="nav-item">
+                                @php
+                                    $pendingDocumentRequests = \App\Models\DocumentRequest::where('status', 'pending')
+                                        ->count();
+                                @endphp
                                 <a class="nav-link {{ request()->routeIs('document-requests.*') ? 'active' : '' }}" href="{{ route('document-requests.index') }}">
                                     <i class="fas fa-file-alt"></i> Document Requests
+                                    @if($pendingDocumentRequests > 0)
+                                        <span class="badge bg-warning text-dark">{{ $pendingDocumentRequests }}</span>
+                                    @endif
                                 </a>
                             </li>
 
@@ -214,8 +221,15 @@
                             </li>
 
                             <li class="nav-item">
+                                @php
+                                    $pendingDocumentRequests = \App\Models\DocumentRequest::where('status', 'pending')
+                                        ->count();
+                                @endphp
                                 <a class="nav-link {{ request()->routeIs('document-requests.*') ? 'active' : '' }}" href="{{ route('document-requests.index') }}">
                                     <i class="fas fa-file-alt"></i> Document Requests
+                                    @if($pendingDocumentRequests > 0)
+                                        <span class="badge bg-warning text-dark">{{ $pendingDocumentRequests }}</span>
+                                    @endif
                                 </a>
                             </li>
 

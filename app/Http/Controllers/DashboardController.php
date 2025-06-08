@@ -71,11 +71,12 @@ class DashboardController extends Controller
 
         $certificatesIssued = 0; // Replace with actual calculation when available
         $pendingRequests = 0; // Replace with actual calculation when available
+        $pendingDocumentRequests = 0; // Replace with actual calculation when available
         $activeUsers = User::where('status', 'active')->count();
-
         return view('dashboard.secretary', compact(
             'totalResidents',
             'certificatesIssued',
+            'pendingDocumentRequests',
             'pendingRequests',
             'activeUsers'
         ));

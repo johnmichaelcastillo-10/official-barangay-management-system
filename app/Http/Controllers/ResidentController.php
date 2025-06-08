@@ -130,11 +130,6 @@ class ResidentController extends Controller
         return view('public.registration');
     }
 
-    public function showDocumentRequestForm()
-    {
-        return view('public.barangay-document-request');
-    }
-
     /**
      * Store a newly created resident in storage (admin version).
      */
@@ -587,4 +582,20 @@ class ResidentController extends Controller
             'terms' => 'required|accepted',
         ]);
     }
+
+    public function getResidentIdByEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $resident = Resident::where('email', $request->email)->first();
+
+        if ($resident) {
+            return response()->json(['id' => $resident->id]);
+        }
+
+        return response()->json(['error' => 'Resident not found'], 404);
+    }
+
 }

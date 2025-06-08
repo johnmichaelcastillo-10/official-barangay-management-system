@@ -10,16 +10,21 @@
             </nav>
         </div>
 
-        @if(session('success'))
+        @php
+            $successMessage = session()->pull('success');
+            $errorMessage = session()->pull('error');
+        @endphp
+
+        @if($successMessage)
             <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
+                {{ $successMessage }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
-        @if(session('error'))
+        @if($errorMessage)
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
+                {{ $errorMessage }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
@@ -74,14 +79,11 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <!-- Always show View Details -->
                                             <a href="{{ route('document-requests.show', $request) }}" class="btn btn-info btn-sm" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
 
-                                            <!-- Status-specific actions -->
                                             @if($request->status === 'pending')
-                                                <!-- Process/Approve -->
                                                 <form action="{{ route('document-requests.process', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
@@ -89,7 +91,7 @@
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                 </form>
-                                                <!-- Reject -->
+
                                                 <form action="{{ route('document-requests.reject', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
@@ -97,8 +99,8 @@
                                                         <i class="fas fa-times"></i>
                                                     </button>
                                                 </form>
+
                                             @elseif($request->status === 'processing')
-                                                <!-- Mark as Ready -->
                                                 <form action="{{ route('document-requests.ready', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
@@ -106,8 +108,8 @@
                                                         <i class="fas fa-clipboard-check"></i>
                                                     </button>
                                                 </form>
+
                                             @elseif($request->status === 'ready')
-                                                <!-- Mark as Released -->
                                                 <form action="{{ route('document-requests.release', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
@@ -131,12 +133,12 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 @if($requests->hasPages())
                     <div class="d-flex justify-content-center mt-4">
                         {{ $requests->links() }}
                     </div>
                 @endif
+
             </div>
         </div>
     </div>

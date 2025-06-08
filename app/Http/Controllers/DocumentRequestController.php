@@ -6,6 +6,7 @@ use App\Models\DocumentRequest;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Carbon;
 
 class DocumentRequestController extends Controller
 {
@@ -26,7 +27,6 @@ class DocumentRequestController extends Controller
 
         return view('document-requests.index', compact('requests'));
     }
-
     /**
      * Show the form for creating a new document request.
      */
@@ -46,27 +46,29 @@ class DocumentRequestController extends Controller
 
         return view('document-requests.create', compact('residents', 'documentTypes'));
     }
-
     /**
      * Store a newly created document request.
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $validated = $request->validate([
             'resident_id' => 'required|exists:residents,id',
             'document_type' => 'required|string',
             'purpose' => 'required|string|max:255',
-            'fee_amount' => 'required|numeric|min:0'
+            // 'fee_amount' => 'required|numeric|min:0'
         ]);
 
         $validated['requested_date'] = now()->toDateString();
         $validated['target_release_date'] = now()->addDays(3)->toDateString();
         $validated['processed_by'] = Auth::id();
 
-        DocumentRequest::create($validated);
+        $documentRequest = DocumentRequest::create($validated);
 
-        return redirect()->route('document-requests.index')
-            ->with('success', 'Document request created successfully!');
+
+        return view('document-requests.success', [
+            'trackingNumber' => $documentRequest->tracking_number,
+        ]);
     }
 
     /**
@@ -178,6 +180,87 @@ class DocumentRequestController extends Controller
             return back()->withErrors(['tracking_number' => 'Tracking number not found.']);
         }
 
-        return view('document-requests.track-result', compact('documentRequest'));
+        $resident = $documentRequest->resident;
+        // dd($documentRequest);
+        if ($documentRequest->status === 'rejected') {
+            return view('document-requests.status', [
+                'resident' => $resident,
+                'isRejected' => true,
+                'remarks' => $documentRequest->remarks ?? 'No remarks provided.',
+                'documentRequest' => $documentRequest,
+            ]);
+        }
+
+        return view('document-requests.status', [
+            'resident' => $resident,
+            'isRejected' => false,
+            'documentRequest' => $documentRequest,
+        ]);
     }
+
+
+    // Using route model binding (recommended)
+    public function process(Request $request, DocumentRequest $documentRequest)
+    {
+        $documentRequest->status = 'processing';
+        $documentRequest->processed_by = Auth::id();
+        $documentRequest->save();
+
+        return redirect()->back()->with('success', 'Document request status updated to processing.');
+    }
+
+    public function reject(Request $request, DocumentRequest $documentRequest)
+    {
+        $documentRequest->status = 'rejected';
+        $documentRequest->processed_by = Auth::id();
+        $documentRequest->save();
+
+        return redirect()->back()->with('success', 'Document request status updated to rejected.');
+    }
+
+    public function ready(Request $request, DocumentRequest $documentRequest)
+    {
+        $documentRequest->status = 'ready';
+        $documentRequest->processed_by = Auth::id();
+        $documentRequest->save();
+
+        return redirect()->back()->with('success', 'Document request status updated to ready.');
+    }
+
+    public function release(Request $request, DocumentRequest $documentRequest)
+    {
+        $documentRequest->status = 'released';
+        $documentRequest->processed_by = Auth::id();
+        $documentRequest->actual_release_date = Carbon::now();
+        $documentRequest->save();
+
+        return redirect()->back()->with('success', 'Document request status updated to released.');
+    }
+
+
+
+
+    public function fetchByTrackingNumber(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string|max:255'
+        ]);
+
+        $document = DocumentRequest::where('tracking_number', $request->tracking_number)->first();
+
+        if (!$document) {
+            return back()->withErrors(['tracking_number' => 'No document found with this tracking number.'])->withInput();
+        }
+
+        return back()->with([
+            'show_modal' => true,
+            'tracking_number' => $document->tracking_number,
+            'doc_type' => $document->document_type ?? 'N/A',
+            'purpose' => $document->purpose ?? 'N/A',
+            'status' => $document->status ?? 'Pending',
+            'requested_date' => $document->created_at->toDateString(),
+            'payment_status' => $document->payment_status ?? 'Unpaid'
+        ]);
+    }
+
 }

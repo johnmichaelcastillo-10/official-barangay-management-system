@@ -149,49 +149,74 @@
 
                     <!-- Form Section -->
                     <div class="form-section">
-                        <form action="{{ route('document.request.store') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
+                        <form action="{{ route('document-request.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="row mb-4">
+                        <!-- Email -->
+                        {{-- Email Field --}}
+                        <div class="col-md-12 mb-3">
+                            <label for="email" class="form-label">Email Address <span class="required">*</span></label>
+                            <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                id="email" name="email" required placeholder="your.email@example.com">
+                            <small id="emailStatus" class="form-text text-muted"></small>
+                            @error('email')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                                {{-- Hidden resident_id --}}
+                        <input type="hidden" id="resident_id" name="resident_id">
+                        </div>
 
-                            <div class="row mb-4">
-                                <!-- Email -->
-                                <div class="col-md-12 mb-3">
-                                    <label for="email" class="form-label">Email Address <span class="required">*</span></label>
-                                    <input type="email" class="form-control @error('email') is-invalid @enderror"
-                                            id="email" name="email" value="{{ old('email') }}" required placeholder="your.email@example.com">
-                                    @error('email')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="birth_date" class="form-label">Birth Date <span class="required">*</span></label>
-                                    <input type="date" class="form-control @error('birth_date') is-invalid @enderror"
-                                            id="birth_date" name="birth_date" value="{{ old('birth_date') }}" required>
-                                    @error('birth_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="document_type" class="form-label">Document Type <span class="required">*</span></label>
-                                    <input type="text" class="form-control @error('document_type') is-invalid @enderror"
-                                            id="document_type" name="document_type" value="{{ old('document_type') }}" required placeholder="Enter document type">
-                                    @error('document_type')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
 
-                            <!-- Submit Buttons -->
-                            <div class="row">
-                                <div class="col-12 text-center">
-                                    <button type="submit" class="btn btn-primary btn-lg me-3">
-                                        <i class="fas fa-paper-plane me-2"></i>Submit Request
-                                    </button>
-                                    <a href="{{ route('welcome') }}" class="btn btn-secondary btn-lg">
-                                        <i class="fas fa-times me-2"></i>Cancel
-                                    </a>
-                                </div>
-                            </div>
-                        </form>
+
+        <!-- Birth Date -->
+        <div class="col-md-6 mb-3">
+            <label for="birth_date" class="form-label">Birth Date <span class="required">*</span></label>
+            <input type="date" class="form-control @error('birth_date') is-invalid @enderror"
+                   id="birth_date" name="birth_date" value="{{ old('birth_date') }}" required>
+            @error('birth_date')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- Document Type -->
+        <div class="col-md-6 mb-3">
+            <label for="document_type" class="form-label">Document Type <span class="required">*</span></label>
+            <select class="form-select @error('document_type') is-invalid @enderror"
+                    id="document_type" name="document_type" required>
+                <option value="" disabled selected>Select document type</option>
+                @foreach ($documentTypes as $key => $label)
+                    <option value="{{ $key }}" {{ old('document_type') == $key ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+            @error('document_type')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <!-- Purpose -->
+        <div class="col-md-12 mb-3">
+            <label for="purpose" class="form-label">Purpose <span class="required">*</span></label>
+            <input type="text" class="form-control @error('purpose') is-invalid @enderror"
+                   id="purpose" name="purpose" value="{{ old('purpose') }}" required placeholder="Enter purpose of the request">
+            @error('purpose')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+
+    <!-- Submit Buttons -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <button type="submit" class="btn btn-primary btn-lg me-3">
+                <i class="fas fa-paper-plane me-2"></i>Submit Request
+            </button>
+            <a href="{{ route('welcome') }}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+        </div>
+    </div>
+</form>
+
                     </div>
                     <!-- End Form Section -->
                 </div>
@@ -203,6 +228,39 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- Form JS -->
+    <script>
+        document.getElementById('email').addEventListener('blur', function () {
+            const email = this.value.trim();
+            const status = document.getElementById('emailStatus');
+            const residentIdInput = document.getElementById('resident_id');
+
+            status.textContent = 'Checking...';
+            residentIdInput.value = '';
+
+            console.log(email);
+
+
+            fetch(`{{ route('residents.get-id') }}?email=${encodeURIComponent(email)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.id) {
+                        residentIdInput.value = data.id;
+                        status.textContent = 'Resident found.';
+                        status.classList.remove('text-danger');
+                        status.classList.add('text-success');
+                    } else {
+                        status.textContent = 'Resident not found.';
+                        status.classList.remove('text-success');
+                        status.classList.add('text-danger');
+                    }
+                })
+                .catch(() => {
+                    status.textContent = 'Error checking email.';
+                    status.classList.remove('text-success');
+                    status.classList.add('text-danger');
+                });
+        });
+    </script>
     <script>
         // Form validation
         document.querySelector('form')?.addEventListener('submit', function (e) {

@@ -16,10 +16,16 @@ Route::get('/', function () {
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-Route::get('/barangay-document-request', [ResidentController::class, 'showDocumentRequestForm'])->name('document-requests.request');
+//Public Document Request  Form
+Route::get('/barangay-document-request', [DocumentRequestController::class, 'create'])->name('document-requests.request');
+Route::post('/barangay-document-request', [DocumentRequestController::class, 'store'])->name('document-request.store');
+
+Route::get('/residents/fetch-id', [ResidentController::class, 'getResidentIdByEmail'])->name('residents.get-id');
+
+
 
 // Public resident registration
-Route::get('/public-registration', [ResidentController::class, 'showPublicRegistrationForm'])->name('public.residents.register');
+Route::get('/public-registration', [ResidentController::class, 'create'])->name('public.residents.register');
 Route::post('/public-registration', [ResidentController::class, 'storePublic'])->name('public.residents.store');
 
 // Public registration tracking routes (no auth required)

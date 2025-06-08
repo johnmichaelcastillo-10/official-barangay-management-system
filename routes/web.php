@@ -24,8 +24,7 @@ Route::get('/residents/fetch-id', [ResidentController::class, 'getResidentIdByEm
 
 
 
-// Public resident registration
-Route::get('/public-registration', [ResidentController::class, 'create'])->name('public.residents.register');
+Route::get('/public-registration', [ResidentController::class, 'showPublicRegistrationForm'])->name('public.residents.register');
 Route::post('/public-registration', [ResidentController::class, 'storePublic'])->name('public.residents.store');
 
 // Public registration tracking routes (no auth required)

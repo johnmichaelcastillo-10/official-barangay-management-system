@@ -40,7 +40,7 @@
         }
 
         .status-released {
-            background: linear-gradient(45deg, #007bff, #17a2b8); /* Blue to teal gradient */
+            background: linear-gradient(45deg, #007bff, #17a2b8);
             color: #fff;
         }
 
@@ -48,9 +48,15 @@
             background: linear-gradient(45deg, #dc3545, #e83e8c);
         }
 
+        .status-processing {
+            background: linear-gradient(45deg, #17a2b8, #6f42c1); /* Teal to purple */
+            color: #fff;
+        }
+
         .status-default {
             background: linear-gradient(45deg, #667eea, #764ba2);
         }
+
 
         .status-icon {
             font-size: 3.5rem;

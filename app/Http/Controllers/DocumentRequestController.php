@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentRequestController extends Controller
 {
@@ -37,7 +38,7 @@ class DocumentRequestController extends Controller
 
         $requests = DocumentRequest::with(['resident', 'processedBy'])
             ->orderBy('created_at', 'desc')
-            ->where('status', 'ready')
+            ->whereIn('status', ['ready', 'released']) // Use whereIn for multiple status values
             ->paginate(10);
 
         return view('certificate-issuance.index', compact('requests'));
@@ -67,19 +68,73 @@ class DocumentRequestController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->all());
-        $validated = $request->validate([
-            'resident_id' => 'required|exists:residents,id',
+        // Validate name, suffix, and birth date to find resident
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'suffix' => 'nullable|string|max:255', // New: Suffix validation
+            'birth_date' => 'required|date',
             'document_type' => 'required|string',
             'purpose' => 'required|string|max:255',
-            // 'fee_amount' => 'required|numeric|min:0'
         ]);
 
-        $validated['requested_date'] = now()->toDateString();
-        $validated['target_release_date'] = now()->addDays(3)->toDateString();
-        $validated['processed_by'] = Auth::id();
+        // Find the resident based on provided name, suffix, and birth date
+        $query = Resident::where('first_name', $request->first_name)
+                        ->where('last_name', $request->last_name)
+                        ->where('birth_date', $request->birth_date)
+                        ->whereNotNull('approved_at') // Ensure only approved residents can request documents
+                        ->whereNull('rejected_at'); // Ensure not a rejected registration
 
-        $documentRequest = DocumentRequest::create($validated);
+        if ($request->filled('middle_name')) {
+            $query->where('middle_name', $request->middle_name);
+        } else {
+            // If middle name is not provided, ensure the stored middle name is also null or empty
+            $query->where(function ($q) {
+                $q->whereNull('middle_name')
+                  ->orWhere('middle_name', '');
+            });
+        }
+
+        if ($request->filled('suffix')) { // New: Add suffix to query
+            $query->where('suffix', $request->suffix);
+        } else {
+            $query->where(function ($q) {
+                $q->whereNull('suffix')
+                  ->orWhere('suffix', '');
+            });
+        }
+
+
+        $resident = $query->first();
+
+        if (!$resident) {
+            return back()->withInput()->withErrors([
+                'resident_info' => 'No approved resident found with the provided full name, suffix, and birth date. Please ensure your details are correct or register first.'
+            ]);
+        }
+
+        // Now that we have resident_id, proceed with document request creation
+        // The 'resident_id' hidden input from the form is now used.
+        $validatedData = $request->validate([
+            'resident_id' => 'required|exists:residents,id', // This field will now be populated by JavaScript
+            'document_type' => 'required|string',
+            'purpose' => 'required|string|max:255',
+        ]);
+
+        // Ensure the resident_id from the form matches the one found by the server-side lookup
+        if ($validatedData['resident_id'] != $resident->id) {
+            return back()->withInput()->withErrors([
+                'resident_info' => 'Mismatched resident information. Please try again.'
+            ]);
+        }
+
+
+        $validatedData['requested_date'] = now()->toDateString();
+        $validatedData['target_release_date'] = now()->addDays(3)->toDateString();
+        $validatedData['processed_by'] = Auth::id(); // This assumes staff are creating, adjust if public users process
+
+        $documentRequest = DocumentRequest::create($validatedData);
 
 
         return view('document-requests.success', [
@@ -243,12 +298,35 @@ class DocumentRequestController extends Controller
         return redirect()->back()->with('success', 'Document request status updated to ready.');
     }
 
-    public function release(Request $request, DocumentRequest $documentRequest)
-    {
+    public function release(DocumentRequest $documentRequest)
+{
+    // Check if the document status is 'ready' before proceeding
+    if ($documentRequest->status === 'ready') {
+        // Update the document status to 'released'
         $documentRequest->status = 'released';
-        $documentRequest->processed_by = Auth::id();
+        // Set the actual release date to now
         $documentRequest->actual_release_date = now();
+        // Record the user who processed (released) the document
+        $documentRequest->processed_by = Auth::id();
+        // Save the changes to the database
         $documentRequest->save();
+
+        // Redirect back to the previous page with a success message
+        return redirect()->back()->with('success', 'Document successfully marked as released.');
+    }
+
+    // If the document is not in a 'ready' status, redirect back with an error message
+    return redirect()->back()->with('error', 'Document is not in a "ready" status for release.');
+}
+
+    /**
+     * Download the generated PDF document.
+     */
+    public function download(DocumentRequest $documentRequest)
+    {
+        $pdf = null; // Initialize $pdf to null
+
+        // Use a switch statement to select the correct view based on document type
         switch ($documentRequest->document_type) {
             case 'barangay_clearance':
                 $pdf = Pdf::loadView('certificate-issuance.barangay-clearance', ['request' => $documentRequest]);
@@ -271,10 +349,22 @@ class DocumentRequestController extends Controller
             case 'travel_permit':
                 $pdf = Pdf::loadView('certificate-issuance.travel-permit', ['request' => $documentRequest]);
                 break;
+            // You might want a default case or handle unrecognized types
+            default:
+                // Handle unsupported document types, e.g., redirect back with an error
+                return redirect()->back()->with('error', 'Document type not recognized for download.');
         }
-        session()->flash('success', $documentRequest->tracking_number . ' Document Released.');
-        return $pdf->download("Document_Release_{$documentRequest->tracking_number}.pdf");
+
+        // If a PDF was successfully loaded, then download it
+        if ($pdf) {
+            $filename = "Document_{$documentRequest->document_type}_{$documentRequest->tracking_number}.pdf";
+            return $pdf->download($filename);
+        }
+
+        // Fallback in case no PDF could be generated (e.g., unrecognized type)
+        return redirect()->back()->with('error', 'Failed to generate PDF for download.');
     }
+
 
 
     public function fetchByTrackingNumber(Request $request)

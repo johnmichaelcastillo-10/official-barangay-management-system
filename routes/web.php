@@ -16,12 +16,15 @@ Route::get('/', function () {
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
-//Public Document Request  Form
+//Public Document Request Form
 Route::get('/barangay-document-request', [DocumentRequestController::class, 'create'])->name('document-requests.request');
 Route::post('/barangay-document-request', [DocumentRequestController::class, 'store'])->name('document-request.store');
 
-Route::get('/residents/fetch-id', [ResidentController::class, 'getResidentIdByEmail'])->name('residents.get-id');
+// NEW route for fetching resident ID by name and birthdate
+Route::get('/residents/fetch-id-by-name-and-birthdate', [ResidentController::class, 'getIdByNameAndBirthdate'])->name('residents.get-id-by-name-and-birthdate');
 
+// REMOVED: Old email-based fetch route
+// Route::get('/residents/fetch-id', [ResidentController::class, 'getResidentIdByEmail'])->name('residents.get-id');
 
 
 Route::get('/public-registration', [ResidentController::class, 'showPublicRegistrationForm'])->name('public.residents.register');
@@ -82,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/document-requests/{documentRequest}/reject', [DocumentRequestController::class, 'reject'])->name('document-requests.reject');
     Route::patch('/document-requests/{documentRequest}/ready', [DocumentRequestController::class, 'ready'])->name('document-requests.ready');
     Route::patch('/document-requests/{documentRequest}/release', [DocumentRequestController::class, 'release'])->name('document-requests.release');
+    Route::get('/document-requests/{documentRequest}/download', [DocumentRequestController::class, 'download'])->name('document-requests.download');
 
     //Certificate Issuance
     Route::get('/certificate-issuance', [DocumentRequestController::class, 'certificateIndex'])->name('certificate-issuance.index');

@@ -124,7 +124,7 @@
                             <a href="{{ route('users.index') }}" class="btn btn-danger">
                                 <i class="fas fa-users-cog me-2"></i> Manage Users
                             </a>
-                            <a href="#" class="btn btn-success">
+                            <a href="{{route('certificate-issuance.index')}}" class="btn btn-success">
                                 <i class="fas fa-file-alt me-2"></i> Issue Certificate
                             </a>
                             <a href="#" class="btn btn-info text-white">

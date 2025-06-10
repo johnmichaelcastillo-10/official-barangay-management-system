@@ -120,7 +120,9 @@
             background: #6c757d;
             color: white;
             transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4);
         }
+
 
         .info-box {
             background: #f8f9fa;
@@ -190,11 +192,16 @@
                 <div class="track-card">
                     <div class="card-header">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <a href="{{ route('welcome') }}" class="back-link">
-                                <i class="fas fa-arrow-left me-2"></i>Back to Home
+                            {{-- Dynamic Back Link --}}
+                            <a href="{{ Auth::check() && Auth::user()->role === 'secretary' ? route('document-requests.index') : route('welcome') }}" class="back-link">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                @if(Auth::check() && Auth::user()->role === 'secretary')
+                                    Back to Document Requests
+                                @else
+                                    Back to Home
+                                @endif
                             </a>
-                            <div style="width: 100px;"></div> <!-- Spacer -->
-                        </div>
+                            <div style="width: 100px;"></div> </div>
                         <div class="text-center">
                             <i class="fas fa-search fa-2x mb-3"></i>
                         </div>
@@ -203,7 +210,6 @@
                     </div>
 
                     <div class="form-section">
-                        <!-- Error Display -->
                         @if ($errors->any())
                             <div class="alert alert-danger" role="alert">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
@@ -213,14 +219,12 @@
                             </div>
                         @endif
 
-                        <!-- Track Icon -->
                         <div class="text-center">
                             <div class="track-icon">
                                 <i class="fas fa-file-search"></i>
                             </div>
                         </div>
 
-                        <!-- Tracking Form -->
                         <form action="{{ route('document-requests.track.result') }}" method="POST">
                             @csrf
 
@@ -242,28 +246,30 @@
                                 @enderror
                             </div>
 
-                            <!-- Example Format -->
                             <div class="example-format">
                                 <small class="text-muted">Format: </small>
                                 <strong>BR-2025-000000</strong>
                             </div>
 
-                            <!-- Submit Button -->
                             <div class="mb-4">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-search me-2"></i>Track Document Request
                                 </button>
                             </div>
 
-                            <!-- Back Button -->
                             <div class="text-center">
-                                <a href="{{ route('welcome') }}" class="btn btn-secondary">
-                                    <i class="fas fa-home me-2"></i>Back to Home
+                                {{-- Dynamic Back Link for bottom button --}}
+                                <a href="{{ Auth::check() && Auth::user()->role === 'secretary' ? route('document-requests.index') : route('welcome') }}" class="btn btn-secondary">
+                                    <i class="fas fa-home me-2"></i>
+                                    @if(Auth::check() && Auth::user()->role === 'secretary')
+                                        Back to Document Requests
+                                    @else
+                                        Back to Home
+                                    @endif
                                 </a>
                             </div>
                         </form>
 
-                        <!-- Information Box -->
                         <div class="info-box">
                             <div class="info-title">
                                 <i class="fas fa-info-circle me-2"></i>How to Track
@@ -274,7 +280,6 @@
                             </div>
                         </div>
 
-                        <!-- Contact Section -->
                         <div class="contact-section">
                             <div class="contact-title">
                                 <i class="fas fa-question-circle me-2"></i>Need Help?
@@ -318,7 +323,7 @@
                 return;
             }
 
-            if (referenceNumber.length < 10) {
+            if (referenceNumber.length < 10) { // Assuming BR-2025-000000 is 13 characters, adjust as needed.
                 e.preventDefault();
                 alert('Please enter a valid reference number.');
                 return;

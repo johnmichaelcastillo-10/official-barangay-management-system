@@ -62,10 +62,11 @@
                                     <td>
                                         @php
                                             $statusColors = [
-
+                                                'pending' => 'secondary',
+                                                'processing' => 'info',
                                                 'ready' => 'success',
                                                 'released' => 'primary',
-
+                                                'cancelled' => 'danger',
                                             ];
                                         @endphp
                                         <span class="badge bg-{{ $statusColors[$request->status] ?? 'secondary' }}">
@@ -83,13 +84,19 @@
                                             </a>
 
                                             @if($request->status === 'ready')
+                                                {{-- Button to mark as released --}}
                                                 <form action="{{ route('document-requests.release', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="btn btn-warning btn-sm" title="Mark as Released" onclick="return confirm('Mark this document as released?');">
-                                                        <i class="fas fa-print"></i>
+                                                        <i class="fas fa-hand-holding"></i> {{-- Changed icon for 'release' --}}
                                                     </button>
                                                 </form>
+                                            @elseif($request->status === 'released')
+                                                {{-- Download button appears when status is 'released' --}}
+                                                <a href="{{ route('document-requests.download', $request) }}" class="btn btn-success btn-sm" title="Download Document">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
                                             @endif
                                         </div>
                                     </td>

@@ -32,6 +32,10 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Document Request Records</h6>
+                {{-- Added: Button to add a new document request --}}
+                <a href="{{ route('document-requests.create') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i> Add New Request
+                </a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">

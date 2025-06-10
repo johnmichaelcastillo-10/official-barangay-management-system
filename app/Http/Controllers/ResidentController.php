@@ -583,19 +583,50 @@ class ResidentController extends Controller
         ]);
     }
 
-    public function getResidentIdByEmail(Request $request)
+    public function getIdByNameAndBirthdate(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'first_name' => 'required|string',
+            'last_name' => 'required|string',
+            'birth_date' => 'required|date',
+            'middle_name' => 'nullable|string',
+            'suffix' => 'nullable|string',
         ]);
 
-        $resident = Resident::where('email', $request->email)->first();
+        $resident = Resident::where('first_name', $request->first_name)
+                            ->where('last_name', $request->last_name)
+                            ->where('birth_date', $request->birth_date);
 
-        if ($resident) {
-            return response()->json(['id' => $resident->id]);
+        if ($request->filled('middle_name')) {
+            $resident->where('middle_name', $request->middle_name);
+        } else {
+            $resident->whereNull('middle_name');
         }
 
-        return response()->json(['error' => 'Resident not found'], 404);
+        if ($request->filled('suffix')) {
+            $resident->where('suffix', $request->suffix);
+        } else {
+            $resident->whereNull('suffix');
+        }
+
+        $foundResident = $resident->first();
+
+        if ($foundResident) {
+            // Check if approved_date and approved_by are set
+            $isApprovedAndVerified = ($foundResident->approved_at !== null && $foundResident->approved_by !== null);
+
+            return response()->json([
+                'id' => $foundResident->id,
+                'is_approved_and_verified' => $isApprovedAndVerified,
+                // You can include other relevant fields if needed
+                // 'status' => $foundResident->status, // If you still have a 'status' field
+            ]);
+        }
+
+        return response()->json([
+            'id' => null,
+            'is_approved_and_verified' => false,
+        ]);
     }
 
 }

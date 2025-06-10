@@ -241,21 +241,6 @@
             border: 2px solid #dee2e6;
         }
 
-        .timeline-content {
-            flex: 1;
-        }
-
-        .timeline-step {
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 0.2rem;
-        }
-
-        .timeline-date {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-
         .btn-primary {
             background: linear-gradient(45deg, #667eea, #764ba2);
             border: none;
@@ -316,12 +301,10 @@
     </style>
 </head>
 <body>
- <!-- Document Request Status Page -->
 <div class="container main-container">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
             <div class="status-card">
-                <!-- Status Header -->
                 <div class="status-header
                     @if($documentRequest->status === 'ready') status-approved
                     @elseif($documentRequest->status === 'released') status-released
@@ -334,8 +317,13 @@
                         <a href="{{ route('document-requests.track') }}" class="back-link">
                             <i class="fas fa-arrow-left me-2"></i>Track Another
                         </a>
-                        <a href="{{ route('welcome') }}" class="back-link">
-                            Home <i class="fas fa-home ms-2"></i>
+                        {{-- Conditional Home Link --}}
+                        <a href="{{ Auth::check() && Auth::user()->role === 'secretary' ? route('document-requests.index') : route('welcome') }}" class="back-link">
+                            @if(Auth::check() && Auth::user()->role === 'secretary')
+                                Back to Document Requests <i class="fas fa-arrow-right ms-2"></i>
+                            @else
+                                Home <i class="fas fa-home ms-2"></i>
+                            @endif
                         </a>
                     </div>
 
@@ -397,7 +385,6 @@
                     </p>
                 </div>
 
-                <!-- Request Details -->
                 <div class="details-section">
                     <div class="reference-number">
                         <div class="reference-label">Tracking Number</div>
@@ -451,7 +438,6 @@
                         </div>
                     @endif
 
-                    <!-- Timeline -->
                     <div class="timeline">
                         <h6 class="timeline-title">Request Timeline</h6>
 
@@ -503,7 +489,6 @@
                         </div>
                     </div>
 
-                    <!-- Next Steps -->
                     <div class="next-steps">
                         <h6 class="next-steps-title">
                             <i class="fas fa-list-check me-2"></i>Next Steps
@@ -533,24 +518,27 @@
                         </ul>
                     </div>
 
-                    <!-- Action Buttons -->
                     <div class="text-center mt-4">
                         <a href="{{ route('document-requests.track') }}" class="btn btn-primary">
                             <i class="fas fa-search me-2"></i>Track Another Request
                         </a>
-                        <a href="{{ route('welcome') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-home me-2"></i>Back to Home
+                        {{-- Conditional Home Link for button --}}
+                        <a href="{{ Auth::check() && Auth::user()->role === 'secretary' ? route('document-requests.index') : route('welcome') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-home me-2"></i>
+                            @if(Auth::check() && Auth::user()->role === 'secretary')
+                                Back to Document Requests
+                            @else
+                                Back to Home
+                            @endif
                         </a>
                     </div>
 
-                    <!-- Print Option -->
                     <div class="text-center mt-3">
                         <button class="btn btn-link" onclick="window.print()">
                             <i class="fas fa-print me-2"></i>Print Status Report
                         </button>
                     </div>
 
-                    <!-- Contact Section -->
                     <div class="contact-section">
                         <div class="contact-title">
                             <i class="fas fa-phone me-2"></i>Need Help?

@@ -185,8 +185,15 @@
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link" href="#">
+                                @php
+                                    $pendingCertificates = \App\Models\DocumentRequest::where('status', 'ready')
+                                        ->count();
+                                @endphp
+                                <a class="nav-link {{ request()->routeIs('certificate-issuance.*') ? 'active' : '' }}" href="{{ route('certificate-issuance.index') }}">
                                     <i class="fas fa-certificate"></i> Certificate Issuance
+                                    @if($pendingCertificates > 0)
+                                        <span class="badge bg-warning text-dark">{{ $pendingCertificates }}</span>
+                                    @endif
                                 </a>
                             </li>
 
@@ -260,8 +267,15 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#">
+                                @php
+                                    $pendingCertificates = \App\Models\DocumentRequest::where('status', 'ready')
+                                        ->count();
+                                @endphp
+                                <a class="nav-link {{ request()->routeIs('certificate-issuance.*') ? 'active' : '' }}" href="{{ route('certificate-issuance.index') }}">
                                     <i class="fas fa-certificate"></i> Certificate Issuance
+                                    @if($pendingCertificates > 0)
+                                        <span class="badge bg-warning text-dark">{{ $pendingCertificates }}</span>
+                                    @endif
                                 </a>
                             </li>
                             <li class="nav-item">

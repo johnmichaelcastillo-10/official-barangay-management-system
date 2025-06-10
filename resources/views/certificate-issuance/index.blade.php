@@ -1,11 +1,11 @@
 <x-layout>
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3">Document Requests</h1>
+            <h1 class="h3">Certificate Issuance</h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Document Requests</li>
+                    <li class="breadcrumb-item active" aria-current="page">Certificate Issuance</li>
                 </ol>
             </nav>
         </div>
@@ -62,11 +62,10 @@
                                     <td>
                                         @php
                                             $statusColors = [
-                                                'pending' => 'warning',
-                                                'processing' => 'info',
+
                                                 'ready' => 'success',
                                                 'released' => 'primary',
-                                                'rejected' => 'danger'
+
                                             ];
                                         @endphp
                                         <span class="badge bg-{{ $statusColors[$request->status] ?? 'secondary' }}">
@@ -83,29 +82,12 @@
                                                 <i class="fas fa-eye"></i>
                                             </a>
 
-                                            @if($request->status === 'pending')
-                                                <form action="{{ route('document-requests.process', $request) }}" method="POST" class="d-inline">
+                                            @if($request->status === 'ready')
+                                                <form action="{{ route('document-requests.release', $request) }}" method="POST" class="d-inline">
                                                     @csrf
                                                     @method('PATCH')
-                                                    <button type="submit" class="btn btn-success btn-sm" title="Process/Approve" onclick="return confirm('Are you sure you want to process this request?')">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-
-                                                <form action="{{ route('document-requests.reject', $request) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-danger btn-sm" title="Reject" onclick="return confirm('Are you sure you want to reject this request?')">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </form>
-
-                                            @elseif($request->status === 'processing')
-                                                <form action="{{ route('document-requests.ready', $request) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-primary btn-sm" title="Mark as Ready" onclick="return confirm('Mark this document as ready for pickup?')">
-                                                        <i class="fas fa-clipboard-check"></i>
+                                                    <button type="submit" class="btn btn-warning btn-sm" title="Mark as Released" onclick="return confirm('Mark this document as released?');">
+                                                        <i class="fas fa-print"></i>
                                                     </button>
                                                 </form>
                                             @endif

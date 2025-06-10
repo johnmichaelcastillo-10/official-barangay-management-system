@@ -83,6 +83,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/document-requests/{documentRequest}/ready', [DocumentRequestController::class, 'ready'])->name('document-requests.ready');
     Route::patch('/document-requests/{documentRequest}/release', [DocumentRequestController::class, 'release'])->name('document-requests.release');
 
+    //Certificate Issuance
+    Route::get('/certificate-issuance', [DocumentRequestController::class, 'certificateIndex'])->name('certificate-issuance.index');
+
     // User Management Routes (Secretary Only)
     // Using full class path instead of middleware alias
     Route::middleware([\App\Http\Middleware\SecretaryMiddleware::class])->group(function () {

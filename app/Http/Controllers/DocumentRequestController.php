@@ -7,6 +7,7 @@ use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class DocumentRequestController extends Controller
 {
@@ -27,6 +28,21 @@ class DocumentRequestController extends Controller
 
         return view('document-requests.index', compact('requests'));
     }
+
+    public function certificateIndex(){
+        if (!in_array(Auth::user()->role, ['chairman', 'secretary'])) {
+            return redirect()->route('dashboard')
+                ->with('error', 'You do not have permission to view this page.');
+        }
+
+        $requests = DocumentRequest::with(['resident', 'processedBy'])
+            ->orderBy('created_at', 'desc')
+            ->where('status', 'ready')
+            ->paginate(10);
+
+        return view('certificate-issuance.index', compact('requests'));
+    }
+
     /**
      * Show the form for creating a new document request.
      */
@@ -231,13 +247,34 @@ class DocumentRequestController extends Controller
     {
         $documentRequest->status = 'released';
         $documentRequest->processed_by = Auth::id();
-        $documentRequest->actual_release_date = Carbon::now();
+        $documentRequest->actual_release_date = now();
         $documentRequest->save();
-
-        return redirect()->back()->with('success', 'Document request status updated to released.');
+        switch ($documentRequest->document_type) {
+            case 'barangay_clearance':
+                $pdf = Pdf::loadView('certificate-issuance.barangay-clearance', ['request' => $documentRequest]);
+                break;
+            case 'certificate_of_residency':
+                $pdf = Pdf::loadView('certificate-issuance.certificate-residency', ['request' => $documentRequest]);
+                break;
+            case 'certificate_of_indigency':
+                $pdf = Pdf::loadView('certificate-issuance.certificate-indigency', ['request' => $documentRequest]);
+                break;
+            case 'business_permit_clearance':
+                $pdf = Pdf::loadView('certificate-issuance.business-permit-clearance', ['request' => $documentRequest]);
+                break;
+            case 'first_time_job_seeker':
+                $pdf = Pdf::loadView('certificate-issuance.first-time-job-seeker', ['request' => $documentRequest]);
+                break;
+            case 'good_moral_certificate':
+                $pdf = Pdf::loadView('certificate-issuance.good-moral-certificate', ['request' => $documentRequest]);
+                break;
+            case 'travel_permit':
+                $pdf = Pdf::loadView('certificate-issuance.travel-permit', ['request' => $documentRequest]);
+                break;
+        }
+        session()->flash('success', $documentRequest->tracking_number . ' Document Released.');
+        return $pdf->download("Document_Release_{$documentRequest->tracking_number}.pdf");
     }
-
-
 
 
     public function fetchByTrackingNumber(Request $request)

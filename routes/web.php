@@ -22,7 +22,7 @@ Route::get('/barangay-document-request', [DocumentRequestController::class, 'cre
 Route::post('/barangay-document-request', [DocumentRequestController::class, 'store'])->name('document-request.store');
 
 // NEW route for fetching resident ID by name and birthdate
-Route::get('/residents/fetch-id-by-name-and-birthdate', [ResidentController::class, 'getIdByNameAndBirthdate'])->name('residents.get-id-by-name-and-birthdate');
+Route::get('/residents/fetch-id-by-name-and-birthdate', [ResidentController::class, 'getIdByNameAndBirthdate'])->name('residents.get-id');
 
 // REMOVED: Old email-based fetch route
 // Route::get('/residents/fetch-id', [ResidentController::class, 'getResidentIdByEmail'])->name('residents.get-id');

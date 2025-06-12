@@ -191,19 +191,18 @@
                                     @enderror
                                 </div>
 
-                                {{-- Birth Date --}}
                                 <div class="col-md-6 mb-3">
-                                    <label for="birth_date" class="form-label">Birth Date <span class="required">*</span></label>
-                                    <input type="date" class="form-control @error('birth_date') is-invalid @enderror"
-                                               id="birth_date" name="birth_date" value="{{ old('birth_date') }}" required>
-                                    <small id="residentStatus" class="form-text text-muted">Please enter your full name and birth date to check your verification status.</small>
-                                    @error('birth_date')
+                                    <label for="resident_id" class="form-label">Resident ID <span class="required">*</span></label>
+                                    <input type="text" class="form-control @error('resident_id') is-invalid @enderror"
+                                               id="resident_id" name="resident_id" value="{{ old('resident_id') }}" required>
+                                    <small id="residentStatus" class="form-text text-muted">Please enter your full name and ID to check your verification status.</small>
+                                    @error('resident_id')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 {{-- Hidden resident_id --}}
-                                <input type="hidden" id="resident_id" name="resident_id">
+                                {{-- <input type="hidden" id="resident_id" name="resident_id"> --}}
 
                                 <div class="col-md-6 mb-3">
                                     <label for="document_type" class="form-label">Document Type <span class="required">*</span></label>
@@ -264,7 +263,6 @@
         const middleNameInput = document.getElementById('middle_name');
         const lastNameInput = document.getElementById('last_name');
         const suffixInput = document.getElementById('suffix');
-        const birthDateInput = document.getElementById('birth_date');
         const residentIdInput = document.getElementById('resident_id');
         const residentStatus = document.getElementById('residentStatus');
         const submitRequestBtn = document.getElementById('submitRequestBtn');
@@ -281,21 +279,19 @@
             const middleName = middleNameInput.value.trim();
             const lastName = lastNameInput.value.trim();
             const suffix = suffixInput.value.trim();
-            const birthDate = birthDateInput.value.trim();
+            const residentId = residentIdInput.value.trim();
 
-            if (!firstName || !lastName || !birthDate) {
-                updateResidentStatusUI('Please enter your full name and birth date to check your verification status.', 'muted', false);
-                residentIdInput.value = '';
+            if (!firstName || !lastName || !residentId) {
+                updateResidentStatusUI('Please enter your full name and ID to check your verification status.', 'muted', false);
                 return;
             }
 
             updateResidentStatusUI('Checking resident status...', 'muted', false);
-            residentIdInput.value = '';
 
             const queryParams = new URLSearchParams({
                 first_name: firstName,
                 last_name: lastName,
-                birth_date: birthDate,
+                resident_id: residentId,
             });
 
             if (middleName) {
@@ -305,7 +301,7 @@
                 queryParams.append('suffix', suffix);
             }
 
-            fetch(`{{ route('residents.get-id-by-name-and-birthdate') }}?${queryParams.toString()}`)
+            fetch(`{{ route('residents.get-id') }}?${queryParams.toString()}`)
                 .then(response => {
                     if (!response.ok) {
                         // If the response is not OK (e.g., 404, 500), parse the error
@@ -315,17 +311,14 @@
                 })
                 .then(data => {
                     if (data.id) {
-                        console.log(data); // Log the new flag for debugging
                         if (data.is_approved_and_verified) { // Use the new flag from the backend
                             residentIdInput.value = data.id;
                             updateResidentStatusUI('Resident found and verified. You can now submit your request.', 'success', true);
                         } else {
-                            residentIdInput.value = ''; // Ensure hidden ID is cleared if not approved/verified
                             updateResidentStatusUI('Resident found, but your account is not yet approved and verified. Please wait for official approval by the barangay.', 'danger', false);
                         }
                     } else {
-                        residentIdInput.value = '';
-                        updateResidentStatusUI('Resident not found. Please ensure your name, suffix, and birth date match your registration, or register if you haven\'t yet.', 'danger', false);
+                        updateResidentStatusUI('Resident not found. Please ensure your name, suffix, and ID match your registration, or register if you haven\'t yet.', 'danger', false);
                     }
                 })
                 .catch(error => {
@@ -335,7 +328,6 @@
                         errorMessage += ` Details: ${error.message}`; // Display backend error message if available
                     }
                     updateResidentStatusUI(errorMessage, 'danger', false);
-                    residentIdInput.value = ''; // Ensure hidden ID is cleared on error
                 });
         }
 
@@ -344,7 +336,7 @@
         middleNameInput.addEventListener('change', fetchResidentId);
         lastNameInput.addEventListener('change', fetchResidentId);
         suffixInput.addEventListener('change', fetchResidentId);
-        birthDateInput.addEventListener('change', fetchResidentId);
+        residentIdInput.addEventListener('change', fetchResidentId);
 
         // Initial check if fields are pre-filled (e.g., from old())
         fetchResidentId();
@@ -352,7 +344,7 @@
         // Client-side form validation (only for required fields other than resident status)
         document.querySelector('form')?.addEventListener('submit', function (e) {
             let hasErrors = false;
-            const requiredFields = ['first_name', 'last_name', 'birth_date', 'document_type', 'purpose'];
+            const requiredFields = ['first_name', 'last_name', 'resident_id', 'document_type', 'purpose'];
 
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);

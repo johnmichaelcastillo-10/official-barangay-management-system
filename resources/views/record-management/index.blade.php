@@ -33,8 +33,54 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Archived Document Records</h6>
+                {{-- No "Go to Record Management" button here as we are already on the page --}}
             </div>
             <div class="card-body">
+                {{-- Filter Form --}}
+                <form action="{{ route('record-management.index') }}" method="GET" class="mb-4">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search (Tracking # or Resident Name)</label>
+                            <input type="text" class="form-control" id="search" name="search"
+                                   placeholder="e.g., TRK-1234, Juan Dela Cruz" value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="document_type" class="form-label">Document Type</label>
+                            <select class="form-select" id="document_type" name="document_type">
+                                <option value="">All Document Types</option>
+                                {{-- Populate this dynamically from your database or a predefined list --}}
+                                @foreach($availableDocumentTypes as $type)
+                                    <option value="{{ $type }}" {{ request('document_type') == $type ? 'selected' : '' }}>
+                                        {{ ucwords(str_replace('_', ' ', $type)) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                {{-- Only show 'released' and 'rejected' as options for records --}}
+                                @foreach(['released', 'rejected'] as $statusOption)
+                                    <option value="{{ $statusOption }}" {{ request('status') == $statusOption ? 'selected' : '' }}>
+                                        {{ ucfirst($statusOption) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-dark w-100">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('record-management.index') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-redo me-1"></i> Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" width="100%" cellspacing="0">
                         <thead>
@@ -45,7 +91,8 @@
                                 <th>Status</th>
                                 <th>Requested Date</th>
                                 <th>Target Release</th>
-                                {{-- REMOVED: <th>Actions</th> --}}
+                                {{-- Actions column is intentionally removed as per your original request --}}
+                                {{-- You can re-add it if you want view/print options for records --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -78,16 +125,12 @@
                                     <td>
                                         {{ $record->target_release_date ? $record->target_release_date->format('M d, Y') : 'TBA' }}
                                     </td>
-                                    {{-- REMOVED: Actions Column --}}
-                                    {{-- If you still want View/Print for records, you'd add them here,
-                                       but the request was to remove "the actions" column. --}}
                                 </tr>
                             @empty
                                 <tr>
-                                    {{-- Adjusted colspan from 7 to 6 (because 1 column is removed) --}}
-                                    <td colspan="6" class="text-center py-4">
+                                    <td colspan="6" class="text-center py-4"> {{-- Adjusted colspan to 6 --}}
                                         <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                                        <p class="text-muted">No document records found.</p>
+                                        <p class="text-muted">No document records found matching your filters.</p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -104,48 +147,4 @@
             </div>
         </div>
     </div>
-
-    {{-- The Print Modal and its JavaScript are no longer needed on this page
-         since there are no "Print" buttons to trigger it. You can remove this section
-         if you are certain you won't need to trigger the modal from this page. --}}
-    {{-- <div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="printModalLabel">Print Certificate</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <p class="mb-3">You are about to print the <strong id="modalDocumentType"></strong> with tracking number <strong id="modalTrackingNumber"></strong>.</p>
-                    <p>Click "View & Print" to open the certificate in a new tab for printing.</p>
-                </div>
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <a id="printCertificateLink" href="#" target="_blank" class="btn btn-primary">
-                        <i class="fas fa-external-link-alt"></i> View & Print
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const printModal = document.getElementById('printModal');
-            printModal.addEventListener('show.bs.modal', function (event) {
-                const button = event.relatedTarget;
-                const documentId = button.getAttribute('data-document-id');
-                const documentType = button.getAttribute('data-document-type');
-                const trackingNumber = button.getAttribute('data-tracking-number');
-
-                const modalDocumentType = printModal.querySelector('#modalDocumentType');
-                const modalTrackingNumber = printModal.querySelector('#modalTrackingNumber');
-                const printCertificateLink = printModal.querySelector('#printCertificateLink');
-
-                modalDocumentType.textContent = documentType;
-                modalTrackingNumber.textContent = trackingNumber;
-                printCertificateLink.href = `/document-requests/${documentId}/print`;
-            });
-        });
-    </script> --}}
 </x-layout>

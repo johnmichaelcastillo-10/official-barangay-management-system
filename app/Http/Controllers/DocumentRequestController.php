@@ -16,34 +16,84 @@ class DocumentRequestController extends Controller
     /**
      * Display a listing of document requests.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Check if user has permission
-        if (!in_array(Auth::user()->role, ['chairman', 'secretary', 'staff'])) {
-            return redirect()->route('dashboard')
-                ->with('error', 'You do not have permission to view this page.');
+        $query = DocumentRequest::query()->with('resident');
+
+        // Filter by Search (Tracking # or Resident Name)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('tracking_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('resident', function ($qr) use ($search) {
+                      $qr->where('first_name', 'like', '%' . $search . '%')
+                         ->orWhere('middle_name', 'like', '%' . $search . '%')
+                         ->orWhere('last_name', 'like', '%' . $search . '%');
+                  });
+            });
         }
 
-        $requests = DocumentRequest::with(['resident', 'processedBy'])
-            ->whereNotIn('status', ['released', 'rejected'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Filter by Document Type
+        if ($request->filled('document_type')) {
+            $query->where('document_type', $request->input('document_type'));
+        }
 
-        return view('document-requests.index', compact('requests'));
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Order the results (optional, but good practice)
+        $query->orderBy('requested_date', 'desc');
+
+        $requests = $query->paginate(10); // Adjust pagination as needed
+
+        // Get unique document types for the filter dropdown
+        // This assumes 'document_type' is a column in your DocumentRequest model
+        $availableDocumentTypes = DocumentRequest::distinct()->pluck('document_type')->sort()->toArray();
+
+        return view('document-requests.index', compact('requests', 'availableDocumentTypes'));
     }
 
-    public function certificateIndex(){
+    public function certificateIndex(Request $request)
+    {
+        // Role-based access control
         if (!in_array(Auth::user()->role, ['chairman', 'secretary', 'staff'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'You do not have permission to view this page.');
         }
-        $requests = DocumentRequest::with(['resident', 'processedBy'])
-            ->orderBy('created_at', 'desc')
-            ->whereNotIn('status', ['released', 'rejected'])
-            ->whereIn('status', ['ready', 'released']) // Use whereIn for multiple status values
-            ->paginate(10);
 
-        return view('certificate-issuance.index', compact('requests'));
+        // Start building the query
+        $query = DocumentRequest::with(['resident', 'processedBy']);
+
+        $query->whereIn('status', ['ready']);
+
+
+        // Filter by Search (Tracking # or Resident Name)
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('tracking_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('resident', function ($qr) use ($search) {
+                      $qr->where('first_name', 'like', '%' . $search . '%')
+                         ->orWhere('middle_name', 'like', '%' . $search . '%')
+                         ->orWhere('last_name', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        // Filter by Document Type
+        if ($request->filled('document_type')) {
+            $query->where('document_type', $request->input('document_type'));
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        $requests = $query->paginate(10);
+
+        $availableDocumentTypes = DocumentRequest::distinct()->pluck('document_type')->sort()->toArray();
+
+        return view('certificate-issuance.index', compact('requests', 'availableDocumentTypes'));
     }
 
     /**
@@ -76,7 +126,7 @@ class DocumentRequestController extends Controller
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'suffix' => 'nullable|string|max:255', // New: Suffix validation
-            'birth_date' => 'required|date',
+            'resident_id' => 'required|integer|exists:residents,id', // This will be populated by JavaScript
             'document_type' => 'required|string',
             'purpose' => 'required|string|max:255',
         ]);
@@ -84,7 +134,7 @@ class DocumentRequestController extends Controller
         // Find the resident based on provided name, suffix, and birth date
         $query = Resident::where('first_name', $request->first_name)
                         ->where('last_name', $request->last_name)
-                        ->where('birth_date', $request->birth_date)
+                        ->where('id', $request->resident_id)
                         ->whereNotNull('approved_at') // Ensure only approved residents can request documents
                         ->whereNull('rejected_at'); // Ensure not a rejected registration
 
@@ -94,7 +144,7 @@ class DocumentRequestController extends Controller
             // If middle name is not provided, ensure the stored middle name is also null or empty
             $query->where(function ($q) {
                 $q->whereNull('middle_name')
-                  ->orWhere('middle_name', '');
+                ->orWhere('middle_name', '');
             });
         }
 
@@ -112,7 +162,7 @@ class DocumentRequestController extends Controller
 
         if (!$resident) {
             return back()->withInput()->withErrors([
-                'resident_info' => 'No approved resident found with the provided full name, suffix, and birth date. Please ensure your details are correct or register first.'
+                'resident_info' => 'No approved resident found with the provided full name, suffix, and ID. Please ensure your details are correct or register first.'
             ]);
         }
 
@@ -350,9 +400,12 @@ class DocumentRequestController extends Controller
     public function print(DocumentRequest $documentRequest)
     {
         // Ensure the document is in a 'released' state before allowing print
-        if ($documentRequest->status !== 'released') {
-            return redirect()->back()->with('error', 'This document is not yet released and cannot be printed.');
+        if ($documentRequest->status !== 'ready') {
+            return redirect()->back()->with('error', 'This document is not yet ready and cannot be printed.');
         }
+
+        DocumentRequest::where('id', $documentRequest->id)
+            ->update(['actual_release_date' => Carbon::now(), 'processed_by' => Auth::id(), 'status' => 'released']);
 
         $pdf = null;
         $viewName = null;

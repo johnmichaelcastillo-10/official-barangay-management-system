@@ -588,14 +588,14 @@ class ResidentController extends Controller
         $request->validate([
             'first_name' => 'required|string',
             'last_name' => 'required|string',
-            'birth_date' => 'required|date',
             'middle_name' => 'nullable|string',
             'suffix' => 'nullable|string',
+            'resident_id' => 'nullable|string',
         ]);
 
         $resident = Resident::where('first_name', $request->first_name)
                             ->where('last_name', $request->last_name)
-                            ->where('birth_date', $request->birth_date);
+                            ->where('id', $request->resident_id);
 
         if ($request->filled('middle_name')) {
             $resident->where('middle_name', $request->middle_name);

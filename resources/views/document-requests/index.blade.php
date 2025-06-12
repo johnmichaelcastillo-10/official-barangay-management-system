@@ -32,11 +32,55 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Document Request Records</h6>
-                <a href="{{ route('document-requests.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i> Add New Request
+                <a href="{{ route('record-management.index') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-book me-1"></i> Go to Record Management
                 </a>
             </div>
             <div class="card-body">
+                {{-- Filter Form --}}
+                <form action="{{ route('document-requests.index') }}" method="GET" class="mb-4">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-3">
+                            <label for="search" class="form-label">Search (Tracking # or Resident Name)</label>
+                            <input type="text" class="form-control" id="search" name="search"
+                                   placeholder="e.g., TRK-1234, Juan Dela Cruz" value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="document_type" class="form-label">Document Type</label>
+                            <select class="form-select" id="document_type" name="document_type">
+                                <option value="">All Document Types</option>
+                                {{-- Populate this dynamically from your database or a predefined list --}}
+                                @foreach($availableDocumentTypes as $type)
+                                    <option value="{{ $type }}" {{ request('document_type') == $type ? 'selected' : '' }}>
+                                        {{ ucwords(str_replace('_', ' ', $type)) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">All Statuses</option>
+                                @foreach(['pending', 'processing', 'ready', 'released', 'rejected'] as $statusOption)
+                                    <option value="{{ $statusOption }}" {{ request('status') == $statusOption ? 'selected' : '' }}>
+                                        {{ ucfirst($statusOption) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-dark w-100">
+                                <i class="fas fa-filter me-1"></i> Filter
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <a href="{{ route('document-requests.index') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-redo me-1"></i> Clear Filters
+                            </a>
+                        </div>
+                    </div>
+                </form>
+
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped" width="100%" cellspacing="0">
                         <thead>

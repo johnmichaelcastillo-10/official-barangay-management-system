@@ -6,6 +6,7 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\DocumentRequestController;
+use App\Http\Controllers\RecordsController;
 
 // Welcome page
 Route::get('/', function () {
@@ -85,7 +86,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/document-requests/{documentRequest}/reject', [DocumentRequestController::class, 'reject'])->name('document-requests.reject');
     Route::patch('/document-requests/{documentRequest}/ready', [DocumentRequestController::class, 'ready'])->name('document-requests.ready');
     Route::patch('/document-requests/{documentRequest}/release', [DocumentRequestController::class, 'release'])->name('document-requests.release');
-    Route::get('/document-requests/{documentRequest}/download', [DocumentRequestController::class, 'download'])->name('document-requests.download');
+    Route::get('/document-requests/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('document-requests.print');
+
+    Route::get('/record-management', [RecordsController::class, 'index'])->name('record-management.index');
 
     //Certificate Issuance
     Route::get('/certificate-issuance', [DocumentRequestController::class, 'certificateIndex'])->name('certificate-issuance.index');

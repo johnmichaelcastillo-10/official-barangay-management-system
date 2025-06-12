@@ -6,9 +6,10 @@ use App\Models\DocumentRequest;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View; // Import the View facade
+use Carbon\Carbon;
 
 class DocumentRequestController extends Controller
 {
@@ -18,12 +19,13 @@ class DocumentRequestController extends Controller
     public function index()
     {
         // Check if user has permission
-        if (!in_array(Auth::user()->role, ['chairman', 'secretary'])) {
+        if (!in_array(Auth::user()->role, ['chairman', 'secretary', 'staff'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'You do not have permission to view this page.');
         }
 
         $requests = DocumentRequest::with(['resident', 'processedBy'])
+            ->whereNotIn('status', ['released', 'rejected'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
 
@@ -31,13 +33,13 @@ class DocumentRequestController extends Controller
     }
 
     public function certificateIndex(){
-        if (!in_array(Auth::user()->role, ['chairman', 'secretary'])) {
+        if (!in_array(Auth::user()->role, ['chairman', 'secretary', 'staff'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'You do not have permission to view this page.');
         }
-
         $requests = DocumentRequest::with(['resident', 'processedBy'])
             ->orderBy('created_at', 'desc')
+            ->whereNotIn('status', ['released', 'rejected'])
             ->whereIn('status', ['ready', 'released']) // Use whereIn for multiple status values
             ->paginate(10);
 
@@ -136,7 +138,11 @@ class DocumentRequestController extends Controller
 
         $documentRequest = DocumentRequest::create($validatedData);
 
-
+        if (Auth::check()) { // Check if a user is authenticated
+            if (Auth::user()->role === 'secretary') {
+                return redirect()->route('document-requests.index')->with('success', 'Document request created successfully! Tracking number: ' . $documentRequest->tracking_number);
+            }
+        }
         return view('document-requests.success', [
             'trackingNumber' => $documentRequest->tracking_number,
         ]);
@@ -282,11 +288,30 @@ class DocumentRequestController extends Controller
 
     public function reject(Request $request, DocumentRequest $documentRequest)
     {
+        // 1. Validate the rejection reason
+        $request->validate([
+            'rejection_reason' => 'required|string|min:10|max:1000', // Example validation rules
+        ], [
+            'rejection_reason.required' => 'The reason for rejection is required.',
+            'rejection_reason.min' => 'The rejection reason must be at least :min characters.',
+            'rejection_reason.max' => 'The rejection reason may not be greater than :max characters.',
+        ]);
+
+        // 2. Update the document request status
         $documentRequest->status = 'rejected';
+
+        // 3. Assign the processed_by user (if authenticated)
+        // Ensure that 'processed_by' is nullable in your database migration if it can be null.
         $documentRequest->processed_by = Auth::id();
+
+        // 4. Save the rejection reason to the 'remarks' column
+        $documentRequest->remarks = $request->input('rejection_reason');
+
+        // 5. Save the changes to the database
         $documentRequest->save();
 
-        return redirect()->back()->with('success', 'Document request status updated to rejected.');
+        // 6. Redirect back with a success message
+        return redirect()->back()->with('success', 'Document request has been rejected successfully and reason saved.');
     }
 
     public function ready(Request $request, DocumentRequest $documentRequest)
@@ -322,49 +347,70 @@ class DocumentRequestController extends Controller
     /**
      * Download the generated PDF document.
      */
-    public function download(DocumentRequest $documentRequest)
+    public function print(DocumentRequest $documentRequest)
     {
-        $pdf = null; // Initialize $pdf to null
+        // Ensure the document is in a 'released' state before allowing print
+        if ($documentRequest->status !== 'released') {
+            return redirect()->back()->with('error', 'This document is not yet released and cannot be printed.');
+        }
+
+        $pdf = null;
+        $viewName = null;
 
         // Use a switch statement to select the correct view based on document type
+        // These are your existing views in `resources/views/certificate-issuance/`
         switch ($documentRequest->document_type) {
             case 'barangay_clearance':
-                $pdf = Pdf::loadView('certificate-issuance.barangay-clearance', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.barangay-clearance';
                 break;
             case 'certificate_of_residency':
-                $pdf = Pdf::loadView('certificate-issuance.certificate-residency', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.certificate-residency';
                 break;
             case 'certificate_of_indigency':
-                $pdf = Pdf::loadView('certificate-issuance.certificate-indigency', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.certificate-indigency';
                 break;
             case 'business_permit_clearance':
-                $pdf = Pdf::loadView('certificate-issuance.business-permit-clearance', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.business-permit-clearance';
                 break;
             case 'first_time_job_seeker':
-                $pdf = Pdf::loadView('certificate-issuance.first-time-job-seeker', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.first-time-job-seeker';
                 break;
             case 'good_moral_certificate':
-                $pdf = Pdf::loadView('certificate-issuance.good-moral-certificate', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.good-moral-certificate';
                 break;
             case 'travel_permit':
-                $pdf = Pdf::loadView('certificate-issuance.travel-permit', ['request' => $documentRequest]);
+                $viewName = 'certificate-issuance.travel-permit';
                 break;
-            // You might want a default case or handle unrecognized types
             default:
-                // Handle unsupported document types, e.g., redirect back with an error
-                return redirect()->back()->with('error', 'Document type not recognized for download.');
+                return redirect()->back()->with('error', 'Document type not recognized for PDF generation.');
         }
 
-        // If a PDF was successfully loaded, then download it
-        if ($pdf) {
-            $filename = "Document_{$documentRequest->document_type}_{$documentRequest->tracking_number}.pdf";
-            return $pdf->download($filename);
+        // Check if the specific view exists before loading
+        if (!View::exists($viewName)) {
+            return redirect()->back()->with('error', 'The specific PDF template for this document type is missing or path is incorrect.');
         }
 
-        // Fallback in case no PDF could be generated (e.g., unrecognized type)
-        return redirect()->back()->with('error', 'Failed to generate PDF for download.');
+        // Pass the data to the view using the variable name it expects ('request')
+        // This is crucial to avoid "Undefined variable $request" error
+        $data = ['request' => $documentRequest];
+
+        // You might also need to pass common variables like barangayName, cityName, etc.
+        // if they are used in all your certificate templates.
+        // Example:
+        // $data['barangayName'] = 'Your Barangay Name';
+        // $data['cityName'] = 'Your City Name';
+        // $data['barangayCaptain'] = 'Hon. John Doe';
+        // $data['secretary'] = 'Ms. Jane Smith';
+
+        $pdf = Pdf::loadView($viewName, $data);
+
+        // Instead of download(), use stream() or inline() to display in the browser
+        $filename = "Document_{$documentRequest->document_type}_{$documentRequest->tracking_number}.pdf";
+        return $pdf->stream($filename); // or $pdf->inline($filename)
+
+        // If something went wrong and PDF wasn't loaded
+        return redirect()->back()->with('error', 'Failed to generate PDF for display.');
     }
-
 
 
     public function fetchByTrackingNumber(Request $request)

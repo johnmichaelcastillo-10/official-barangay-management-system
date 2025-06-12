@@ -34,7 +34,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-xs text-success text-uppercase mb-1 fw-bold">DOCUMENTS PROCESSED (TODAY)</div>
-                                <div class="h2 mb-0 fw-bold">{{ $certificatesIssued }}</div>
+                                <div class="h2 mb-0 fw-bold">{{ $certificatesIssuedToday }}</div>
                             </div>
                             <div class="text-success opacity-75">
                                 <i class="fas fa-file-alt fa-2x"></i>
@@ -51,7 +51,7 @@
                         <div class="d-flex justify-content-between align-items-center">
                             <div>
                                 <div class="text-xs text-info text-uppercase mb-1 fw-bold">PENDING DOCUMENTS</div>
-                                <div class="h2 mb-0 fw-bold">{{ $pendingRequests }}</div>
+                                <div class="h2 mb-0 fw-bold">{{ $pendingDocumentRequests }}</div>
                             </div>
                             <div class="text-info opacity-75">
                                 <i class="fas fa-clock fa-2x"></i>

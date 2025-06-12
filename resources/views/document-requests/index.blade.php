@@ -32,7 +32,6 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Document Request Records</h6>
-                {{-- Added: Button to add a new document request --}}
                 <a href="{{ route('document-requests.create') }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus me-1"></i> Add New Request
                 </a>
@@ -96,13 +95,12 @@
                                                     </button>
                                                 </form>
 
-                                                <form action="{{ route('document-requests.reject', $request) }}" method="POST" class="d-inline">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <button type="submit" class="btn btn-danger btn-sm" title="Reject" onclick="return confirm('Are you sure you want to reject this request?')">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#rejectModal{{ $request->id }}"
+                                                        title="Reject request">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
 
                                             @elseif($request->status === 'processing')
                                                 <form action="{{ route('document-requests.ready', $request) }}" method="POST" class="d-inline">
@@ -116,6 +114,53 @@
                                         </div>
                                     </td>
                                 </tr>
+
+                                {{-- REJECT MODAL (moved directly inside the loop) --}}
+                                <div class="modal fade" id="rejectModal{{ $request->id }}" tabindex="-1" aria-labelledby="rejectModalLabel{{ $request->id }}" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title text-danger" id="rejectModalLabel{{ $request->id }}">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>Reject Document Request
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <form action="{{ route('document-requests.reject', $request) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <div class="modal-body">
+                                                    <div class="alert alert-warning">
+                                                        <strong>Warning:</strong> You are about to reject the document request for
+                                                        <strong>{{ $request->resident->first_name }} {{ $request->resident->last_name }}</strong>
+                                                        (Tracking #: <strong>{{ $request->tracking_number }}</strong>).
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label for="rejection_reason{{ $request->id }}" class="form-label">
+                                                            <strong>Reason for Rejection <span class="text-danger">*</span></strong>
+                                                        </label>
+                                                        <textarea class="form-control" id="rejection_reason{{ $request->id }}"
+                                                                  name="rejection_reason" rows="4" required
+                                                                  placeholder="Please provide a clear reason for rejecting this document request. This will be visible to the applicant when they check their status."></textarea>
+                                                    </div>
+
+                                                    <div class="form-text">
+                                                        The applicant will be able to see this reason when they track their request status.
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-danger"
+                                                            onclick="return confirm('Are you sure you want to reject this document request? This action cannot be undone.')">
+                                                        <i class="fas fa-times me-2"></i>Reject Request
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {{-- END REJECT MODAL --}}
+
                             @empty
                                 <tr>
                                     <td colspan="7" class="text-center py-4">

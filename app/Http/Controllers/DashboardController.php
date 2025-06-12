@@ -1,5 +1,6 @@
 <?php
 namespace App\Http\Controllers;
+use App\Models\DocumentRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -68,15 +69,17 @@ class DashboardController extends Controller
         $totalResidents = Resident::whereNotNull('approved_at')
             ->orWhere('registration_type', 'admin')
             ->count();
+        $certificatesIssuedToday = DocumentRequest::where('processed_by', Auth::id())
+            ->whereDate('actual_release_date', now())
+            ->count();
+        $pendingDocumentRequests = DocumentRequest::where('status', 'pending')->count();
 
-        $certificatesIssued = 0; // Replace with actual calculation when available
         $pendingRequests = 0; // Replace with actual calculation when available
-        $pendingDocumentRequests = 0; // Replace with actual calculation when available
         $pendingCertificates = 0; // Replace with actual calculation when available
         $activeUsers = User::where('status', 'active')->count();
         return view('dashboard.secretary', compact(
             'totalResidents',
-            'certificatesIssued',
+            'certificatesIssuedToday',
             'pendingCertificates',
             'pendingDocumentRequests',
             'pendingRequests',
@@ -91,8 +94,10 @@ class DashboardController extends Controller
      */
     public function staff()
     {
+        $documentsProcessed = DocumentRequest::where('processed_by', Auth::id())
+            ->count();
+        $pendingDocumentRequests = DocumentRequest::where('status', 'pending')->count();
         $residentsAssisted = 0; // Replace with actual calculation when available
-        $documentsProcessed = 0; // Replace with actual calculation when available
         $assignedTasks = 0; // Replace with actual calculation when available
         $pendingRequests = 0; // Replace with actual calculation when available
 

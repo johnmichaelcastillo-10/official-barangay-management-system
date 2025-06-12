@@ -226,37 +226,12 @@
                 </div>
 
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-12">
                         <div class="detail-item">
                             <label class="detail-label-form">Status</label>
                             <div class="detail-value-form">
                                 <span>
                                     {{ ucfirst($documentRequest->status) }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="detail-item">
-                            <label class="detail-label-form">Remarks</label>
-                            <div class="detail-value-form">{{ $documentRequest->remarks ?? 'None' }}</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="detail-item">
-                            <label class="detail-label-form">Fee Amount</label>
-                            <div class="detail-value-form">₱{{ number_format($documentRequest->fee_amount, 2) }}</div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="detail-item">
-                            <label class="detail-label-form">Payment Status</label>
-                            <div class="detail-value-form">
-                                <span class="payment-status-{{ str_replace(' ', '_', strtolower($documentRequest->payment_status)) }} payment-status-badge">
-                                    {{ ucfirst($documentRequest->payment_status) }}
                                 </span>
                             </div>
                         </div>

@@ -208,7 +208,7 @@
                                 <div class="col-md-6 mb-3">
                                     <label for="document_type" class="form-label">Document Type <span class="required">*</span></label>
                                     <select class="form-select @error('document_type') is-invalid @enderror"
-                                                id="document_type" name="document_type" required>
+                                            id="document_type" name="document_type" required>
                                         <option value="" disabled selected>Select document type</option>
                                         @foreach ($documentTypes as $key => $label)
                                             <option value="{{ $key }}" {{ old('document_type') == $key ? 'selected' : '' }}>{{ $label }}</option>
@@ -219,10 +219,20 @@
                                     @enderror
                                 </div>
 
-                                <div class="col-md-12 mb-3">
-                                    <label for="purpose" class="form-label">Purpose <span class="required">*</span></label>
-                                    <input type="text" class="form-control @error('purpose') is-invalid @enderror"
-                                               id="purpose" name="purpose" value="{{ old('purpose') }}" required placeholder="Enter purpose of the request">
+                                <div class="col-md-12 mb-3" id="purpose_section">
+                                    <label for="purpose_dropdown" class="form-label">Purpose <span class="required">*</span></label>
+                                    <select class="form-select @error('purpose') is-invalid @enderror"
+                                            id="purpose_dropdown" required>
+                                        <option value="" disabled selected>Please select a document type first</option>
+                                    </select>
+                                    {{-- This hidden input will hold the final value sent to the backend --}}
+                                    <input type="hidden" name="purpose" id="hidden_purpose_input" value="{{ old('purpose') }}">
+
+                                    <div id="other_purpose_container" class="mt-2" style="display: none;">
+                                        <label for="other_purpose_text" class="form-label">Specify Other Purpose <span class="required">*</span></label>
+                                        <input type="text" class="form-control" id="other_purpose_text" placeholder="e.g., For legal affidavit" value="{{ old('purpose') }}">
+                                    </div>
+
                                     @error('purpose')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -366,5 +376,180 @@
             }
         });
     </script>
+    <script>
+    const documentPurposes = {
+        'barangay_clearance': [
+            'Employment',
+            'School Enrollment',
+            'Loan Application',
+            'Utility Application',
+            'ID Application',
+            'Business Registration',
+            'Other'
+        ],
+        'certificate_of_residency': [
+            'School Enrollment',
+            'Government Benefits',
+            'Financial Transaction',
+            'Legal Process',
+            'Voter Registration',
+            'Other'
+        ],
+        'certificate_of_indigency': [
+            'Medical Assistance',
+            'Scholarship Application',
+            'Legal Aid',
+            'Burial Assistance',
+            'Discount on Government Fees',
+            'Other'
+        ],
+        'business_permit_clearance': [
+            'New Business Registration',
+            'Business Permit Renewal',
+            'Mayor\'s Permit Application',
+            'Business Expansion',
+            'Other'
+        ],
+        'first_time_job_seeker': [
+            'Job Application',
+            'PESO Registration',
+            'Other'
+        ],
+        'good_moral_certificate': [
+            'School Admission',
+            'Scholarship Application',
+            'Employment',
+            'Professional License Application',
+            'Travel Visa',
+            'Other'
+        ],
+        'travel_permit': [
+            'Minors Traveling Alone',
+            'Emergency Travel',
+            'Specific Local Events',
+            'Delivery/Service Travel',
+            'Other'
+        ]
+    };
+
+    const documentTypeSelect = document.getElementById('document_type');
+    const purposeDropdown = document.getElementById('purpose_dropdown');
+    const hiddenPurposeInput = document.getElementById('hidden_purpose_input');
+    const otherPurposeContainer = document.getElementById('other_purpose_container');
+    const otherPurposeText = document.getElementById('other_purpose_text');
+
+    /**
+     * Updates the purpose dropdown options based on the selected document type.
+     * @param {string} selectedType - The value of the selected document type.
+     * @param {string|null} oldPurpose - The previously submitted purpose, if any.
+     */
+    function updatePurposes(selectedType, oldPurpose = null) {
+        // Clear current options from purpose dropdown
+        purposeDropdown.innerHTML = '<option value="" disabled selected>Select a purpose</option>';
+        otherPurposeContainer.style.display = 'none'; // Hide "Other" input by default
+        otherPurposeText.removeAttribute('required');
+        hiddenPurposeInput.value = ''; // Clear hidden input by default
+
+        if (selectedType && documentPurposes[selectedType]) {
+            const purposes = documentPurposes[selectedType];
+            let foundOldPurposeInDropdown = false;
+
+            purposes.forEach(purpose => {
+                const option = document.createElement('option');
+                option.value = purpose;
+                option.textContent = purpose;
+                purposeDropdown.appendChild(option);
+
+                // If an old purpose exists, try to select it
+                if (oldPurpose && purpose === oldPurpose) {
+                    option.selected = true;
+                    foundOldPurposeInDropdown = true;
+                    hiddenPurposeInput.value = oldPurpose; // Set hidden input value
+                }
+            });
+
+            // If oldPurpose exists but wasn't found in predefined options, it must be an "Other" value
+            if (oldPurpose && !foundOldPurposeInDropdown) {
+                const otherOption = Array.from(purposeDropdown.options).find(opt => opt.value === 'Other');
+                if (otherOption) {
+                    otherOption.selected = true;
+                    otherPurposeContainer.style.display = 'block'; // Show "Other" input
+                    otherPurposeText.value = oldPurpose; // Set "Other" input value
+                    otherPurposeText.setAttribute('required', 'required');
+                    hiddenPurposeInput.value = oldPurpose; // Set hidden input value from old 'Other'
+                } else {
+                     // If "Other" option itself wasn't in list (shouldn't happen with current data structure)
+                     // or if oldPurpose was custom but "Other" isn't chosen
+                     hiddenPurposeInput.value = oldPurpose;
+                }
+            }
+        } else {
+            // If no document type selected or no purposes defined
+            purposeDropdown.innerHTML = '<option value="" disabled selected>Please select a document type first</option>';
+            otherPurposeContainer.style.display = 'none';
+        }
+    }
+
+    /**
+     * Handles the selection change of the purpose dropdown.
+     */
+    function handlePurposeSelection() {
+        const selectedPurpose = purposeDropdown.value;
+
+        if (selectedPurpose === 'Other') {
+            otherPurposeContainer.style.display = 'block';
+            otherPurposeText.setAttribute('required', 'required');
+            otherPurposeText.focus();
+            hiddenPurposeInput.value = otherPurposeText.value; // Initially empty if not old value
+        } else {
+            otherPurposeContainer.style.display = 'none';
+            otherPurposeText.removeAttribute('required');
+            otherPurposeText.value = ''; // Clear custom text
+            hiddenPurposeInput.value = selectedPurpose; // Set hidden input value
+        }
+    }
+
+    /**
+     * Updates the hidden purpose input whenever the "Other" text field is typed into.
+     */
+    function updateHiddenPurpose() {
+        hiddenPurposeInput.value = otherPurposeText.value;
+    }
+
+    // Event Listeners
+    documentTypeSelect.addEventListener('change', () => {
+        updatePurposes(documentTypeSelect.value); // Call with no oldPurpose when changing document type
+    });
+
+    purposeDropdown.addEventListener('change', handlePurposeSelection);
+    otherPurposeText.addEventListener('input', updateHiddenPurpose);
+
+    // Initial load: Populate purposes if a document type was already selected (e.g., after validation error)
+    document.addEventListener('DOMContentLoaded', () => {
+        const oldDocumentType = documentTypeSelect.value;
+        const oldPurpose = hiddenPurposeInput.value; // Get the old purpose from the hidden input
+
+        if (oldDocumentType) {
+            updatePurposes(oldDocumentType, oldPurpose);
+        }
+    });
+
+    // Custom form validation before submission (to ensure 'Other' field is filled if necessary)
+    document.querySelector('form').addEventListener('submit', function(event) {
+        const selectedPurpose = purposeDropdown.value;
+        const customPurposeText = otherPurposeText.value.trim();
+
+        if (selectedPurpose === 'Other' && customPurposeText === '') {
+            event.preventDefault(); // Prevent form submission
+            // Use SweetAlert2 or a custom message box instead of alert()
+            alert('Please specify the purpose in the "Other" field.');
+            otherPurposeText.focus();
+        } else if (selectedPurpose === '' || selectedPurpose === 'Select a purpose') {
+            event.preventDefault();
+            alert('Please select a purpose.');
+            purposeDropdown.focus();
+        }
+    });
+</script>
 </body>
 </html>

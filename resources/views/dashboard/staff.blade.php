@@ -129,6 +129,9 @@
                             <a href="{{ route('document-requests.index') }}" class="btn btn-info text-white">
                                 <i class="fas fa-file-alt me-2"></i> Process Document Request
                             </a>
+                            <a href="{{route('certificate-issuance.index')}}" class="btn btn-warning">
+                                <i class="fas fa-file-alt me-2"></i> Issue Certificate
+                            </a>
                             <a href="#" class="btn btn-secondary">
                                 <i class="fas fa-question-circle me-2"></i> Resident Inquiry
                             </a>

@@ -89,13 +89,13 @@
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="btn btn-warning btn-sm" title="Mark as Released" onclick="return confirm('Mark this document as released?');">
-                                                        <i class="fas fa-hand-holding"></i> {{-- Changed icon for 'release' --}}
+                                                        <i class="fas fa-hand-holding"></i>
                                                     </button>
                                                 </form>
                                             @elseif($request->status === 'released')
-                                                {{-- Download button appears when status is 'released' --}}
-                                                <a href="{{ route('document-requests.download', $request) }}" class="btn btn-success btn-sm" title="Download Document">
-                                                    <i class="fas fa-download"></i>
+                                                {{-- Print button appears when status is 'released' --}}
+                                                <a href="{{ route('document-requests.print', $request) }}" target="_blank" class="btn btn-success btn-sm" title="Print Document">
+                                                    <i class="fas fa-print"></i>
                                                 </a>
                                             @endif
                                         </div>

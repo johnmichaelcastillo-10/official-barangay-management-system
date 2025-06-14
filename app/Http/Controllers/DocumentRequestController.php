@@ -66,7 +66,7 @@ class DocumentRequestController extends Controller
         // Start building the query
         $query = DocumentRequest::with(['resident', 'processedBy']);
 
-        $query->whereIn('status', ['ready']);
+        $query->whereIn('status', ['ready', 'released']);
 
 
         // Filter by Search (Tracking # or Resident Name)
@@ -189,7 +189,7 @@ class DocumentRequestController extends Controller
         $documentRequest = DocumentRequest::create($validatedData);
 
         if (Auth::check()) { // Check if a user is authenticated
-            if (Auth::user()->role === 'secretary') {
+            if (Auth::user()->role === 'secretary' || Auth::user()->role === 'chairman' || Auth::user()->role === 'staff') {
                 return redirect()->route('document-requests.index')->with('success', 'Document request created successfully! Tracking number: ' . $documentRequest->tracking_number);
             }
         }
@@ -374,25 +374,26 @@ class DocumentRequestController extends Controller
     }
 
     public function release(DocumentRequest $documentRequest)
-{
-    // Check if the document status is 'ready' before proceeding
-    if ($documentRequest->status === 'ready') {
-        // Update the document status to 'released'
-        $documentRequest->status = 'released';
-        // Set the actual release date to now
-        $documentRequest->actual_release_date = now();
-        // Record the user who processed (released) the document
-        $documentRequest->processed_by = Auth::id();
-        // Save the changes to the database
-        $documentRequest->save();
+    {
+        // Check if the document status is 'ready' before proceeding
+        if ($documentRequest->status === 'ready') {
+            // Update the document status to 'released'
+            $documentRequest->status = 'released';
+            // Set the actual release date to now
+            $documentRequest->actual_release_date = now();
+            // Record the user who processed (released) the document
+            $documentRequest->processed_by = Auth::id();
+            // Save the changes to the database
+            $documentRequest->save();
 
-        // Redirect back to the previous page with a success message
-        return redirect()->back()->with('success', 'Document successfully marked as released.');
+            // Redirect back to the previous page with a success message
+            return redirect()->back()->with('success', 'Document successfully marked as released.');
+        }
+
+        // If the document is not in a 'ready' status, redirect back with an error message
+        return redirect()->back()->with('error', 'Document is not in a "ready" status for release.');
     }
 
-    // If the document is not in a 'ready' status, redirect back with an error message
-    return redirect()->back()->with('error', 'Document is not in a "ready" status for release.');
-}
 
     /**
      * Download the generated PDF document.
@@ -400,12 +401,12 @@ class DocumentRequestController extends Controller
     public function print(DocumentRequest $documentRequest)
     {
         // Ensure the document is in a 'released' state before allowing print
-        if ($documentRequest->status !== 'ready') {
-            return redirect()->back()->with('error', 'This document is not yet ready and cannot be printed.');
+        if ($documentRequest->status !== 'released') {
+            return redirect()->back()->with('error', 'This document is not yet released and cannot be printed.');
         }
 
         DocumentRequest::where('id', $documentRequest->id)
-            ->update(['actual_release_date' => Carbon::now(), 'processed_by' => Auth::id(), 'status' => 'released']);
+            ->update(['actual_release_date' => Carbon::now(), 'processed_by' => Auth::id(), 'status' => 'received']);
 
         $pdf = null;
         $viewName = null;

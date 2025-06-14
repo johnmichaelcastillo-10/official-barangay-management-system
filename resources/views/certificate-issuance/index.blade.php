@@ -127,11 +127,19 @@
                                             <a href="{{ route('document-requests.show', $request) }}" class="btn btn-info btn-sm" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            @if($request->status === 'ready')
+                                            @if($request->status === 'released')
                                                 {{-- Print button appears when status is 'released' --}}
                                                 <a href="{{ route('document-requests.print', $request) }}" target="_blank" class="btn btn-success btn-sm" title="Print Document">
                                                     <i class="fas fa-print"></i>
                                                 </a>
+                                            @elseif($request->status === 'ready')
+                                                <form action="{{ route('document-requests.release', $request) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <button type="submit" class="btn btn-primary btn-sm" title="Mark as Released" onclick="return confirm('Mark this document as released?')">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
                                             @endif
                                         </div>
                                     </td>

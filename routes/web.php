@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/document-requests/{documentRequest}/print', [DocumentRequestController::class, 'print'])->name('document-requests.print');
 
     Route::get('/record-management', [RecordsController::class, 'index'])->name('record-management.index');
+    Route::get('/record-management/{documentRequest}', [RecordsController::class, 'show'])->name('record-management.show'); // This is the new/corrected route
 
     //Certificate Issuance
     Route::get('/certificate-issuance', [DocumentRequestController::class, 'certificateIndex'])->name('certificate-issuance.index');

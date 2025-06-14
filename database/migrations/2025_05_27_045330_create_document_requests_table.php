@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('resident_id')->constrained()->onDelete('cascade');
             $table->string('document_type');
             $table->string('purpose');
-            $table->enum('status', ['pending', 'processing', 'ready', 'released', 'rejected'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'ready', 'released', 'rejected', 'received'])->default('pending');
             $table->text('remarks')->nullable();
             $table->decimal('fee_amount', 8, 2)->default(0.00);
             $table->enum('payment_status', ['unpaid', 'paid'])->default('unpaid');

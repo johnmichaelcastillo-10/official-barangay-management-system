@@ -33,7 +33,6 @@
         <div class="card shadow mb-4">
             <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Archived Document Records</h6>
-                {{-- No "Go to Record Management" button here as we are already on the page --}}
             </div>
             <div class="card-body">
                 {{-- Filter Form --}}
@@ -48,7 +47,6 @@
                             <label for="document_type" class="form-label">Document Type</label>
                             <select class="form-select" id="document_type" name="document_type">
                                 <option value="">All Document Types</option>
-                                {{-- Populate this dynamically from your database or a predefined list --}}
                                 @foreach($availableDocumentTypes as $type)
                                     <option value="{{ $type }}" {{ request('document_type') == $type ? 'selected' : '' }}>
                                         {{ ucwords(str_replace('_', ' ', $type)) }}
@@ -60,7 +58,6 @@
                             <label for="status" class="form-label">Status</label>
                             <select class="form-select" id="status" name="status">
                                 <option value="">All Statuses</option>
-                                {{-- Only show 'released' and 'rejected' as options for records --}}
                                 @foreach(['released', 'rejected'] as $statusOption)
                                     <option value="{{ $statusOption }}" {{ request('status') == $statusOption ? 'selected' : '' }}>
                                         {{ ucfirst($statusOption) }}
@@ -91,8 +88,7 @@
                                 <th>Status</th>
                                 <th>Requested Date</th>
                                 <th>Target Release</th>
-                                {{-- Actions column is intentionally removed as per your original request --}}
-                                {{-- You can re-add it if you want view/print options for records --}}
+                                {{-- <th>Actions</th> Added Actions column header --}}
                             </tr>
                         </thead>
                         <tbody>
@@ -110,10 +106,8 @@
                                     <td>
                                         @php
                                             $statusColors = [
-                                                'pending' => 'warning',
-                                                'processing' => 'info',
-                                                'ready' => 'success',
-                                                'released' => 'primary',
+                                                'pending' => 'warning', 'processing' => 'info',
+                                                'ready' => 'success', 'released' => 'primary',
                                                 'rejected' => 'danger'
                                             ];
                                         @endphp
@@ -125,10 +119,21 @@
                                     <td>
                                         {{ $record->target_release_date ? $record->target_release_date->format('M d, Y') : 'TBA' }}
                                     </td>
+                                    <td>
+                                        <a href="{{ route('record-management.show', $record) }}" class="btn btn-info btn-sm" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {{-- You could add a print button here if you want to allow printing of already released records from this view --}}
+                                        @if($record->status === 'released')
+                                            <a href="{{ route('document-requests.print', $record) }}" target="_blank" class="btn btn-secondary btn-sm" title="Print Document">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center py-4"> {{-- Adjusted colspan to 6 --}}
+                                    <td colspan="7" class="text-center py-4"> {{-- Adjusted colspan back to 7 --}}
                                         <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
                                         <p class="text-muted">No document records found matching your filters.</p>
                                     </td>

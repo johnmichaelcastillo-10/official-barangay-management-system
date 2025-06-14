@@ -11,9 +11,8 @@ class RecordsController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request) // Inject Request object to access query parameters
+    public function index(Request $request)
     {
-        // Permission check
         if (!in_array(Auth::user()->role, ['chairman', 'secretary', 'staff'])) {
             return redirect()->route('dashboard')
                 ->with('error', 'You do not have permission to view this page.');
@@ -21,7 +20,7 @@ class RecordsController extends Controller
 
         $query = DocumentRequest::with(['resident', 'processedBy'])
             ->orderBy('created_at', 'desc')
-            ->whereIn('status', ['released', 'rejected']); // Only show relevant statuses for records
+            ->whereIn('status', ['received', 'rejected']);
 
         // Apply filters
         if ($request->filled('search')) {
@@ -42,23 +41,34 @@ class RecordsController extends Controller
         }
 
         if ($request->filled('status') && in_array($request->input('status'), ['released', 'rejected'])) {
-            // Only apply status filter if it's one of the valid record statuses
             $query->where('status', $request->input('status'));
-        } elseif ($request->filled('status') && !in_array($request->input('status'), ['released', 'rejected'])) {
-            // If an invalid status for records is selected, redirect or ignore
-            // For now, we'll ignore it as the initial whereIn filters it already
-            // but you could add a redirect with an error message if you prefer.
         }
 
         $records = $query->paginate(10);
 
-        // Get unique document types for the filter dropdown
         $availableDocumentTypes = DocumentRequest::select('document_type')
                                                 ->distinct()
                                                 ->orderBy('document_type')
                                                 ->pluck('document_type');
 
         return view('record-management.index', compact('records', 'availableDocumentTypes'));
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(DocumentRequest $documentRequest)
+    {
+        // Ensure only 'released' or 'rejected' documents can be viewed as records
+        if (!in_array($documentRequest->status, ['received', 'rejected'])) {
+            return redirect()->route('record-management.index')
+                ->with('error', 'This document is not an archived record and cannot be viewed here.');
+        }
+
+        // Eager load relationships if you need resident and processedBy details in the show view
+        $documentRequest->load(['resident', 'processedBy']);
+
+        return view('record-management.show', compact('documentRequest'));
     }
 
     /**
@@ -72,10 +82,17 @@ class RecordsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(DocumentRequest $documentRequest)
-    {
-        //
-    }
+    // public function show(DocumentRequest $record)
+    // {
+    //     // Check if user has permission
+    //     if (!in_array(Auth::user()->role, ['chairman', 'secretary'])) {
+    //         return redirect()->route('dashboard')
+    //             ->with('error', 'You do not have permission to view this page.');
+    //     }
+
+    //     $record->load(['resident', 'processedBy']);
+    //     return view('record-management.show', compact('record'));
+    // }
 
     /**
      * Update the specified resource in storage.

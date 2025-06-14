@@ -185,15 +185,15 @@
                             </li>
 
                             <li class="nav-item">
-                                {{-- @php
+                                @php
                                     $pendingCertificates = \App\Models\DocumentRequest::where('status', 'ready')
                                         ->count();
-                                @endphp --}}
+                                @endphp
                                 <a class="nav-link {{ request()->routeIs('certificate-issuance.*') ? 'active' : '' }}" href="{{ route('certificate-issuance.index') }}">
                                     <i class="fas fa-certificate"></i> Certificate Issuance
-                                    {{-- @if($pendingCertificates > 0)
+                                    @if($pendingCertificates > 0)
                                         <span class="badge bg-warning text-dark">{{ $pendingCertificates }}</span>
-                                    @endif --}}
+                                    @endif
                                 </a>
                             </li>
 
